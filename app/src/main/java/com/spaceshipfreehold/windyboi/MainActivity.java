@@ -39,16 +39,25 @@ public class MainActivity extends AppCompatActivity {
     private class WinchOutTouchListener implements View.OnTouchListener {
         @Override
         public boolean onTouch(View v, MotionEvent event) {
-            run = !run;
-            if(run) {
+            // TODO: How to get push button behavior?
+            if(event.isButtonPressed(v.getId())){
                 mWinch.out();
                 mWinchOutButton.setBackgroundColor(Color.DKGRAY);
             } else {
-                mWinch.out = false;
-                mWinch.in = false;
+                mWinch.brake();
                 mWinchOutButton.setBackgroundColor(Color.BLACK);
             }
-            return false;
+
+//            run = !run;
+//            if(run) {
+//                mWinch.out();
+//                mWinchOutButton.setBackgroundColor(Color.DKGRAY);
+//            } else {
+//                mWinch.mOut = false;
+//                mWinch.mIn = false;
+//
+//            }
+            return true;
         }
     }
 
@@ -59,7 +68,11 @@ public class MainActivity extends AppCompatActivity {
                  mWinch = new Winch(getApplicationContext());
                  mWinch.start();
              }
-             mWinch.connect();
+             if(mWinch.connect()){
+                 mConnectToDeviceButton.setText("Connected");
+             } else {
+                 mConnectToDeviceButton.setText("Unconnected");
+             }
              return true;
         }
     }
@@ -67,17 +80,26 @@ public class MainActivity extends AppCompatActivity {
     private class WinchInTouchListener implements View.OnTouchListener{
         @Override
         public boolean onTouch(View v, MotionEvent event) {
-            if(mWinch != null) {
-                run = !run;
-                if (run) {
-                    mWinch.in();
-                    mWinchInButton.setBackgroundColor(Color.DKGRAY);
-                } else {
-                    mWinch.brake();
-                    mWinchInButton.setBackgroundColor(Color.BLACK);
-                }
+
+            if(event.isButtonPressed(v.getId())){
+                mWinch.in();
+                mWinchOutButton.setBackgroundColor(Color.DKGRAY);
+            } else {
+                mWinch.brake();
+                mWinchOutButton.setBackgroundColor(Color.BLACK);
             }
-            return false;
+
+//            if(mWinch != null) {
+//                run = !run;
+//                if (run) {
+//                    mWinch.in();
+//                    mWinchInButton.setBackgroundColor(Color.DKGRAY);
+//                } else {
+//                    mWinch.brake();
+//                    mWinchInButton.setBackgroundColor(Color.BLACK);
+//                }
+//            }
+            return true;
         }
     }
 }
