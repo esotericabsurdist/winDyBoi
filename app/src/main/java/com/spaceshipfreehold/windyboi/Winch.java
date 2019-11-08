@@ -15,28 +15,44 @@ import java.lang.ref.WeakReference;
 import java.util.Set;
 import java.util.UUID;
 
+import androidx.annotation.NonNull;
+
 public class Winch extends Thread {
 
+    private static Winch mInstance;
     private WeakReference<Context> mContext;
 
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothDevice mBluetoothDevice;
     private BluetoothSocket mBluetoothSocket;
 
+    private IWinchConnectionListener mListener;
+
+    private static String WINCH_NAME = "windyboi";
     private static byte IN_COMMAND = 'i';
     private static byte OUT_COMMAND = 'o';
 
     volatile boolean mIn = false;
     volatile boolean mOut = false;
+    volatile boolean mConnected = false;
 
-    Winch(Context context){
-        mContext = new WeakReference<>(context);
+    private Winch(){}
+
+    public static Winch getInstance(Context context){
+        if(mInstance == null){
+            mInstance = new Winch();
+            mInstance.mContext = new WeakReference<>(context);
+        }
+        return mInstance;
+    }
+
+    public void setListener(@NonNull IWinchConnectionListener listener){
+        mListener = listener;
     }
 
     public boolean connect(){
         if(mBluetoothAdapter == null){
-            // Ensure that we have the singleton
-            Log.d("derp", "bluetooth adpater is null");
+            // Ensure that we have the adapter singleton.
             mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         }
 
@@ -44,36 +60,52 @@ public class Winch extends Thread {
             if(mBluetoothAdapter.isEnabled()){
                 Set<BluetoothDevice> devices = mBluetoothAdapter.getBondedDevices();
                 for(BluetoothDevice device : devices){
-                    if(device.getName().toLowerCase().equals("windyboi")){
+                    if(device.getName().toLowerCase().equals(WINCH_NAME)){
                         // We found our winch by name.
-                        Toast.makeText(mContext.get(), "Found " + device.getName(), Toast.LENGTH_SHORT).show();
                         mBluetoothDevice = device;
                         break;
                     }
                 }
 
+                if(mBluetoothDevice == null){
+                    if(mListener!= null){
+                        mListener.onWinchNotFound();
+                        return false;
+                    }
+                }
+
                 if(mBluetoothDevice.getBondState() == BluetoothDevice.BOND_BONDED){
+
                     // UUID from Google's JavaDoc for Serial BT, see createInsecureRfcommSocketToServiceRecord(...) source.
                     UUID serialConnectionUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
                     try {
                         mBluetoothSocket = mBluetoothDevice.createInsecureRfcommSocketToServiceRecord(serialConnectionUUID);
                         mBluetoothSocket.connect();
                         if(mBluetoothSocket.isConnected()){
-                            Toast.makeText(mContext.get(), "Connected!", Toast.LENGTH_LONG).show();
+                            mConnected = true;
+                            if(mListener != null){
+                                mListener.onConnected();
+                            }
                             return true;
                         }
                     } catch (Exception e) {
-                        Toast.makeText(mContext.get(), "CONNECTION FAILED", Toast.LENGTH_LONG).show();
+                        if(mListener != null){
+                            mListener.onSocketConnectionFailed();
+                        }
                         return false;
                     }
                 }
 
             } else {
-                Toast.makeText(mContext.get(), "Enable Bluetooth!", Toast.LENGTH_LONG).show();
+                if(mListener != null){
+                    mListener.onBluetoothNotEnabled();
+                }
                 return false;
             }
         } else {
-            Toast.makeText(mContext.get(), "Failed to get bluetooth adapter. Enable Bluetooth!", Toast.LENGTH_LONG).show();
+            if(mListener != null){
+                mListener.onNoBluetoothAdapterFound();
+            }
             return false;
         }
         return false;
@@ -98,14 +130,16 @@ public class Winch extends Thread {
     public void run() {
         while(true) {
             try {
-                // TODO: Determine if sleep is required here. to not over fill the buffer on the BT chip.
-                sleep(60);
+                sleep(50); // Empirically derived value based on rate of buffer consumption on Arduino.
                 if(mIn){
                     mBluetoothSocket.getOutputStream().write(IN_COMMAND);
                 } else if (mOut) {
                     mBluetoothSocket.getOutputStream().write(OUT_COMMAND);
-                } else {
-                    // Don't do anything.
+                } else if(!mBluetoothSocket.isConnected() && mConnected){ // This fails
+                    mConnected = false;
+                    if(mListener != null){
+                        mListener.onDisconnected();
+                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();

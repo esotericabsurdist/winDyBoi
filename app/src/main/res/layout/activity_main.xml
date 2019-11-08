@@ -14,19 +14,8 @@
         android:layout_weight="1"
         android:textSize="100dp"
         android:background="#000"
-        android:textColor="@color/colorPrimary"
+        android:textColor="@color/mintyGreen"
         android:text="OUT">
-    </Button>
-
-    <Button
-        android:id="@+id/winch_connect_button"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:background="#00E"
-        android:textColor="#FFF"
-        android:textSize="20dp"
-        android:text="CONNECT">
     </Button>
 
     <Button
@@ -37,6 +26,19 @@
         android:textSize="100dp"
         android:background="#000"
         android:text="IN"
-        android:textColor="@color/colorAccent" />
+        android:textColor="@color/pinkishRed" />
+
+    <Button
+        android:id="@+id/winch_connect_button"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@color/darkMintyGreen"
+        android:textColor="#FFF"
+        android:textSize="30dp"
+        android:text="CONNECT">
+    </Button>
+
+
 
 </LinearLayout>
