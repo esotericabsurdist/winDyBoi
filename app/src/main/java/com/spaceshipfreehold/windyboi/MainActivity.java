@@ -6,6 +6,7 @@ import androidx.core.content.ContextCompat;
 import android.annotation.SuppressLint;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
@@ -33,8 +34,8 @@ public class MainActivity extends AppCompatActivity {
         mWinchInButton = findViewById(R.id.winch_in_button);
 
         mWinchOutButton.setOnTouchListener(new WinchOutTouchListener());
-        mConnectToDeviceButton.setOnLongClickListener(new ConnectClickListener());
         mWinchInButton.setOnTouchListener(new WinchInTouchListener());
+        mConnectToDeviceButton.setOnLongClickListener(new ConnectClickListener());
 
         mWinch = Winch.getInstance(getApplicationContext());
         mWinch.setListener(new WinchConnectionListener());
@@ -58,11 +59,13 @@ public class MainActivity extends AppCompatActivity {
                 case MotionEvent.ACTION_DOWN:
                     mWinch.out();
                     mWinchOutButton.setBackgroundColor(mControlButtonDepressedColor);
+                    Log.d("derp", "DOWn");
                     return true;
 
                 case MotionEvent.ACTION_UP:
                     mWinch.brake();
                     mWinchOutButton.setBackgroundColor(Color.BLACK);
+                    Log.d("derp", "Up");
                     return false;
             }
 

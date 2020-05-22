@@ -2,15 +2,10 @@ package com.spaceshipfreehold.windyboi;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGattCallback;
-import android.bluetooth.BluetoothHeadset;
-import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.util.Log;
-import android.widget.Toast;
 
-import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.Set;
 import java.util.UUID;
@@ -28,7 +23,7 @@ public class Winch extends Thread {
 
     private IWinchConnectionListener mListener;
 
-    private static String WINCH_NAME = "windyboi";
+    private static String WINCH_NAME = "HC-06";
     private static byte IN_COMMAND = 'i';
     private static byte OUT_COMMAND = 'o';
 
@@ -52,7 +47,7 @@ public class Winch extends Thread {
 
     public boolean connect(){
         if(mBluetoothAdapter == null){
-            // Ensure that we have the adapter singleton.
+            // Ensure that we have the adapter singleton.fg
             mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         }
 
@@ -60,7 +55,7 @@ public class Winch extends Thread {
             if(mBluetoothAdapter.isEnabled()){
                 Set<BluetoothDevice> devices = mBluetoothAdapter.getBondedDevices();
                 for(BluetoothDevice device : devices){
-                    if(device.getName().toLowerCase().equals(WINCH_NAME)){
+                    if(device.getName().toLowerCase().equals(WINCH_NAME.toLowerCase())){
                         // We found our winch by name.
                         mBluetoothDevice = device;
                         break;
@@ -130,16 +125,24 @@ public class Winch extends Thread {
     public void run() {
         while(true) {
             try {
-                sleep(50); // Empirically derived value based on rate of buffer consumption on Arduino.
+                // Optimal values:
+                // Galaxy S7: 55
+                // Moto G7:
+
+                // TODO: Allow for this value to be set in the application by a slider.
+                sleep(74); // Empirically derived value based on rate of buffer consumption on Arduino/BT module.
                 if(mIn){
                     mBluetoothSocket.getOutputStream().write(IN_COMMAND);
                 } else if (mOut) {
                     mBluetoothSocket.getOutputStream().write(OUT_COMMAND);
-                } else if(!mBluetoothSocket.isConnected() && mConnected){ // This fails
+                } else if(!mBluetoothSocket.isConnected() && mConnected) {
                     mConnected = false;
-                    if(mListener != null){
+                    if (mListener != null) {
                         mListener.onDisconnected();
                     }
+                } else if(mBluetoothDevice == null){ // Maybe this works?/
+                    mListener.onDisconnected();
+                } else {
                 }
             } catch (Exception e) {
                 e.printStackTrace();
